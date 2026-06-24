@@ -1,0 +1,227 @@
+### CONFIGURATION DU TRADING BOT - MODULE RISK MANAGER
+### Version 1.0 - Tous les paramètres sont configurables
+
+# ============================================================================
+# PARAMETRES DE SIZING DE POSITION
+# ============================================================================
+position_sizing:
+  # Kelly Criterion
+  kelly:
+    enabled: true
+    full_kelly: false  # Utiliser fractional Kelly (25%)
+    fraction: 0.25  # 25% du Kelly optimal
+    min_sample_size: 20  # Nombre minimal de trades pour calculer Kelly
+
+  # ATR-based sizing
+  atr:
+    enabled: true
+    period: 14  # Période ATR en barres
+    multiplier: 2.0  # Nombre de ATR pour stop loss
+
+  # Contraintes de sizing
+  constraints:
+    max_risk_per_trade_pct: 2.0  # Max 2% du capital par trade
+    max_position_size_pct: 5.0  # Max 5% du portfolio par position
+    max_concurrent_positions: 6  # Max 6 positions simultanées
+    min_position_size_pct: 0.1  # Min 0.1% du portfolio
+    max_leverage: 3.0  # Leverage max autorisé
+
+# ============================================================================
+# CIRCUIT BREAKER
+# ============================================================================
+circuit_breaker:
+  enabled: true
+
+  drawdown_limits:
+    daily:
+      threshold_pct: 5.0  # Stop daily si drawdown > 5%
+      reset_time: "16:00"  # Réinitialisation à 16h UTC
+    monthly:
+      threshold_pct: 15.0  # Stop monthly si drawdown > 15%
+      reset_day: 1  # Réinitialisation le 1er du mois
+
+  # Kill switch automatique
+  auto_kill_switch:
+    enabled: true
+    trigger_consecutive_losses: 5  # Stop après 5 pertes consécutives
+    trigger_loss_ratio: 0.3  # Stop si loss ratio > 30%
+
+  # Cooldown period après trigger
+  cooldown:
+    enabled: true
+    duration_minutes: 30  # 30 minutes de cooldown
+    max_daily_restarts: 3  # Max 3 restarts par jour
+
+# ============================================================================
+# RISK MANAGEMENT PORTFOLIO
+# ============================================================================
+portfolio_risk:
+  # Value at Risk
+  var:
+    enabled: true
+    confidence_levels:
+      - 0.95  # VaR 95%
+      - 0.99  # VaR 99%
+    methods:
+      historical: true
+      parametric: true
+    lookback_period_days: 252  # 1 année de données
+    min_observations: 20
+
+  # Conditional VaR (Expected Shortfall)
+  cvar:
+    enabled: true
+    confidence_level: 0.95
+
+  # Corrélation
+  correlation:
+    enabled: true
+    lookback_days: 60
+    recompute_frequency_hours: 24
+    correlation_threshold: 0.7  # Alert si corrélation > 70%
+
+  # Exposition sectorielle
+  sector_exposure:
+    enabled: true
+    max_sector_exposure_pct: 30.0  # Max 30% par secteur
+    monitored_sectors:
+      - Technology
+      - Finance
+      - Healthcare
+      - Energy
+      - Consumer
+      - Industrial
+      - Materials
+      - Utilities
+      - RealEstate
+      - Communication
+
+  # Monitoring concentration
+  concentration:
+    enabled: true
+    herfindahl_threshold: 0.15  # Indice Herfindahl limite
+    top_10_positions_max_pct: 60.0  # Top 10 pos < 60%
+
+# ============================================================================
+# VALIDATION DES TRADES
+# ============================================================================
+trade_validation:
+  enabled: true
+
+  # Checks obligatoires
+  checks:
+    signal_quality: true  # Vérifier la qualité du signal
+    position_limits: true  # Vérifier les limites de position
+    sector_limits: true  # Vérifier exposition sectorielle
+    correlation_check: true  # Vérifier corrélations
+    liquidity_check: true  # Vérifier liquidité
+    margin_check: true  # Vérifier marge disponible
+
+  # Décisions possibles
+  actions:
+    GO: "Approuver le trade"
+    REDUCE: "Réduire la taille"
+    BLOCK: "Bloquer le trade"
+
+  # Seuils de decision
+  signal_quality_threshold: 0.70  # Min 70% de qualité
+  liquidity_min_daily_volume_usd: 1000000  # Min volume quotidien
+
+# ============================================================================
+# P&L TRACKING
+# ============================================================================
+pnl_tracking:
+  enabled: true
+  update_frequency_seconds: 60  # Mettre à jour toutes les minutes
+
+  metrics:
+    track_realized_pnl: true
+    track_unrealized_pnl: true
+    track_commission_pnl: true
+    track_slippage: true
+
+  # Alerts P&L
+  alerts:
+    daily_loss_alert_pct: 3.0  # Alerte si perte > 3% par jour
+    daily_profit_alert_pct: 5.0  # Alerte si gain > 5% par jour
+
+# ============================================================================
+# REPORTING ET LOGGING
+# ============================================================================
+reporting:
+  enabled: true
+  report_frequency_minutes: 5  # Rapports toutes les 5 minutes
+
+  metrics_to_track:
+    - position_count
+    - portfolio_value
+    - daily_pnl
+    - monthly_pnl
+    - drawdown_daily
+    - drawdown_monthly
+    - var_95
+    - var_99
+    - cvar_95
+    - sharpe_ratio
+    - max_concentration
+    - sector_exposure
+
+logging:
+  level: "INFO"
+  format: "json"
+  output: "file"
+  file_path: "logs/trading_bot.log"
+  max_file_size_mb: 100
+  backup_count: 10
+
+  log_trades: true
+  log_risk_decisions: true
+  log_pnl_updates: true
+  log_correlation_updates: true
+
+# ============================================================================
+# EXECUTION
+# ============================================================================
+execution:
+  max_order_latency_ms: 100
+  risk_check_timeout_ms: 50
+  position_update_batch_size: 10
+
+  max_retries: 3
+  retry_delay_ms: 100
+
+# ============================================================================
+# DATA
+# ============================================================================
+data:
+  lookback_periods:
+    short_term_days: 5
+    medium_term_days: 20
+    long_term_days: 252
+
+  cache_prices: true
+  cache_returns: true
+  cache_volatility: true
+  cache_correlation: true
+
+# ============================================================================
+# PARAMETRES AVANCES
+# ============================================================================
+advanced:
+  risk_aggregation:
+    enabled: true
+    method: "full_revaluation"
+    frequency_seconds: 300
+
+  stress_testing:
+    enabled: true
+    scenarios:
+      market_crash_10pct: -0.10
+      market_crash_20pct: -0.20
+      volatility_spike_2x: 2.0
+      correlation_to_1: 1.0
+
+  backtest:
+    initial_capital: 1000000
+    commissions_bps: 2.0
+    slippage_bps: 1.0
